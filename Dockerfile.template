@@ -4,6 +4,7 @@ FROM resin/%%RESIN_MACHINE_NAME%%-python:3
 
 # use apt-get if you need to install dependencies,
 RUN apt-get update && apt-get install -yq \
+  libsdl1.2-dev \
   python3-pyaudio \
   python3-numpy \
   && \
