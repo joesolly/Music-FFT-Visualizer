@@ -46,8 +46,6 @@ class SwhRecorder:
         self.inStream.close()
         self.p.terminate()
 
-    ### RECORDING AUDIO ###
-
     def getAudio(self):
         """get a single buffer size worth of audio."""
         audioString = self.inStream.read(self.BUFFERSIZE)
@@ -74,8 +72,6 @@ class SwhRecorder:
         self.threadsDieNow = True
         if hasattr(self, 't') and self.t:
             self.t.join()
-
-    ### MATH ###
 
     def downsample(self, data, mult):
         """Given 1D data, return the binned average."""
