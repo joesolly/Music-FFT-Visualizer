@@ -1,6 +1,7 @@
 import math
 import time
 import colorsys
+import numpy
 
 try:
     from neopixel import Adafruit_NeoPixel
@@ -24,6 +25,9 @@ class Visualization(object):
     visualization_method = VISUALIZATION_METHODS[-1]
     single_frequency_amplitue_color = (255, 255, 255)
     max_db = 1020
+    max_db_length = 500  # number of samples to use for weighted average of max db
+    max_db_array = []
+    max_db_weights = []
 
     def __init__(self, led_count, led_pin, led_freq_hz, led_dma, led_brightness, led_invert):
         self.led_count = led_count
@@ -32,6 +36,15 @@ class Visualization(object):
         self.led_dma = led_dma
         self.led_brightness = led_brightness
         self.led_invert = led_invert
+
+        for i in range(self.max_db_length):
+            self.max_db_array.append(self.max_db)
+            if i / (self.max_db_length / 3) < 1:
+                self.max_db_weights.append(.5)
+            elif i / (self.max_db_length / 3) < 2:
+                self.max_db_weights.append(.8)
+            else:
+                self.max_db_weights.append(1)
 
         self.dbs = []
         for _ in range(self.led_count):
@@ -81,6 +94,11 @@ class Visualization(object):
             else:  # fade slowly
                 self.dbs[led] = int((self.dbs[led] * 2 + db) / 3)
 
+        self.max_db_array.pop(0)
+        self.max_db_array.append(max(self.dbs))
+        # use weighted avg for max then set top 95% as max
+        self.max_db = numpy.average(self.max_db_array, weights=self.max_db_weights) * .95
+
     def set_visualization_method(self, method):
         self.visualization_method = method
 
@@ -106,7 +124,7 @@ class Visualization(object):
 
     def display_frequency_color(self):
         for led in range(self.led_count):
-            self.write_pixel(led, self.hsv_to_rgb((.7 - (self.dbs[led] / 1020)) % 1))
+            self.write_pixel(led, self.hsv_to_rgb((.7 - (self.dbs[led] / self.max_db)) % 1))
 
     def display_single_frequency_amplitude(self):
         for led in range(self.led_count):
