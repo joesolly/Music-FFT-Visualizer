@@ -3,47 +3,13 @@ import time
 import colorsys
 
 try:
-    from neopixel import Adafruit_NeoPixel, Color
+    from neopixel import Adafruit_NeoPixel
     has_pixels = True
 except Exception:
     has_pixels = False
     import pygame
 
 from recorder import SwhRecorder
-
-
-def pixel_wheel(pos):
-    """b->g->r color wheel from 0 to 1020, neopixels use grb format"""
-    if pos < 255:
-        return Color(pos, 0, 255)
-    elif pos < 510:
-        pos -= 255
-        return Color(255, 0, 255 - pos)
-    elif pos < 765:
-        pos -= 510
-        return Color(255, pos, 0)
-    elif pos <= 1020:
-        pos -= 765
-        return Color(255 - pos, 255, 0)
-    else:
-        return Color(0, 255, 0)
-
-
-def rgb_wheel(pos):
-    """b->g->r color wheel from 0 to 1020, to (r, g, b)"""
-    if pos < 255:
-        return (0, pos, 255)
-    elif pos < 510:
-        pos -= 255
-        return (0, 255, 255 - pos)
-    elif pos < 765:
-        pos -= 510
-        return (pos, 255, 0)
-    elif pos <= 1020:
-        pos -= 765
-        return (255, 255 - pos, 0)
-    else:
-        return (255, 0, 0)
 
 
 class Visualization(object):
@@ -134,10 +100,13 @@ class Visualization(object):
         else:
             self.screen.fill(rgb_color, self.boxes[index])
 
+    def hsv_to_rgb(self, color_fraction):
+        color_fraction = max(0, min(color_fraction, 1))
+        return [int(color * 255) for color in colorsys.hsv_to_rgb(color_fraction, 1, 1)]
+
     def display_frequency_color(self):
         for led in range(self.led_count):
-            rgb_color = rgb_wheel(self.dbs[led])
-            self.write_pixel(led, rgb_color)
+            self.write_pixel(led, self.hsv_to_rgb((.7 - (self.dbs[led] / 1020)) % 1))
 
     def display_single_frequency_amplitude(self):
         for led in range(self.led_count):
@@ -156,9 +125,9 @@ class Visualization(object):
 
     def display_frequency_color_frequency_amplitude(self):
         for led in range(self.led_count):
-            colors = colorsys.hsv_to_rgb(led / self.led_count, 1, 1)
+            colors = self.hsv_to_rgb(led / self.led_count)
             rgb_color = [
-                min(int(color * 255 * self.dbs[led] / self.max_db), 255) for color in colors]
+                min(int(color * self.dbs[led] / self.max_db), color) for color in colors]
             self.write_pixel(led, rgb_color)
 
     def display_fft(self):
