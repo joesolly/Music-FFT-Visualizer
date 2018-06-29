@@ -20,6 +20,7 @@ class Visualization(object):
         ('single_frequency_amplitude', 'Single Frequency Color'),
         ('color_change_frequency_amplitude', 'Color Change Frequency Amplitude'),
         ('frequency_color_frequency_amplitude', 'Frequency Color Frequency Amplitude'),
+        ('frequency_color_shift_frequency_amplitude', 'Frequency Color Shift Frequency Amplitude'),
     )
     VISUALIZATION_METHODS = [choice[0] for choice in VISUALIZATION_METHOD_CHOICES]
     visualization_method = VISUALIZATION_METHODS[-1]
@@ -124,6 +125,7 @@ class Visualization(object):
 
     def display_frequency_color(self):
         for led in range(self.led_count):
+            # blue is low and red is high
             self.write_pixel(led, self.hsv_to_rgb((.7 - (self.dbs[led] / self.max_db)) % 1))
 
     def display_single_frequency_amplitude(self):
@@ -144,6 +146,15 @@ class Visualization(object):
     def display_frequency_color_frequency_amplitude(self):
         for led in range(self.led_count):
             colors = self.hsv_to_rgb(led / self.led_count)
+            rgb_color = [
+                min(int(color * self.dbs[led] / self.max_db), color) for color in colors]
+            self.write_pixel(led, rgb_color)
+
+    def display_frequency_color_shift_frequency_amplitude(self):
+        time_fraction = ((time.time() - self.start_time) / 8) % 1  # rotate from 0 to 1 in 8 seconds
+
+        for led in range(self.led_count):
+            colors = self.hsv_to_rgb(((led / self.led_count) + (time_fraction * -1)) % 1)
             rgb_color = [
                 min(int(color * self.dbs[led] / self.max_db), color) for color in colors]
             self.write_pixel(led, rgb_color)
