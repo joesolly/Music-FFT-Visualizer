@@ -6,7 +6,7 @@ import threading
 class SwhRecorder:
     """Simple, cross-platform class to record from the microphone."""
 
-    MAX_FREQUENCY = 4000  # sounds above this are just annoying
+    MAX_FREQUENCY = 5000  # sounds above this are just annoying
     MIN_FREQUENCY = 16  # can't hear anything less than this
 
     def __init__(self, buckets=300):
@@ -87,9 +87,11 @@ class SwhRecorder:
         ys = ys[self.buckets_below_frequency:]
 
         # Shorten to requested number of buckets within MAX_FREQUENCY
-        final = ys[::self.buckets_per_final_bucket]
+        final = numpy.copy(ys[::self.buckets_per_final_bucket])
+        final_size = len(final)
         for i in range(1, self.buckets_per_final_bucket):
-            data_to_combine = numpy.resize(ys[i::self.buckets_per_final_bucket], len(final))
+            data_to_combine = numpy.copy(ys[i::self.buckets_per_final_bucket])
+            data_to_combine.resize(final_size)
             final = numpy.add(final, data_to_combine)
 
         return final[:int(self.buckets_within_frequency)]

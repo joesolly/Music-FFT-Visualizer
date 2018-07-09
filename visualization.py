@@ -26,7 +26,7 @@ class Visualization(object):
     visualization_method = VISUALIZATION_METHODS[-1]
     single_frequency_amplitue_color = (255, 255, 255)
     max_db = 20000
-    max_db_length = 50  # number of samples to use for weighted average of max db
+    max_db_length = 25  # number of samples to use for weighted average of max db
     max_db_array = []
     max_db_weights = []
 
@@ -95,7 +95,7 @@ class Visualization(object):
             if db > self.dbs[led]:  # jump up fast
                 self.dbs[led] = db
             else:  # fade slowly
-                self.dbs[led] = int((self.dbs[led] * 1 + db * 2) / 3)
+                self.dbs[led] = int((self.dbs[led] * 2 + db * 3) / 5)
             # self.dbs[led] = db
 
         self.max_db_array.pop(0)
