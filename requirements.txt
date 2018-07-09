@@ -4,3 +4,4 @@ markupsafe==1.0
 numpy==1.14.4
 pyaudio==0.2.11
 python-decouple==3.1
+rpi_ws281x==3.1.0

@@ -4,7 +4,7 @@ import colorsys
 import numpy
 
 try:
-    from neopixel import Adafruit_NeoPixel
+    from neopixel import PixelStrip
     has_pixels = True
 except Exception:
     has_pixels = False
@@ -59,7 +59,7 @@ class Visualization(object):
 
         if has_pixels:
             # Create NeoPixel object with appropriate configuration.
-            self.strip = Adafruit_NeoPixel(
+            self.strip = PixelStrip(
                 self.led_count, self.led_pin, self.led_freq_hz, self.led_dma, self.led_invert, self.led_brightness)
             # Intialize the library (must be called once before other functions).
             self.strip.begin()
