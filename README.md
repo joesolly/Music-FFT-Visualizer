@@ -1,3 +1,47 @@
+# Installation
+
+## OSX
+
+```
+brew install portaudio pipenv
+pipenv install
+```
+
+## RaspberryPi
+
+```
+sudo apt-get install portaudio19-dev python3-dev
+pip3 install -r requirements.txt
+```
+
+# Usage
+
+## OSX
+
+```
+pipenv run ./run.sh
+```
+
+## RaspberryPi
+
+```
+bash ./run.sh
+```
+
+# Changing Settings
+
+Add settings to `.env` file
+
+```
+HTTP_PORT=80
+LED_COUNT=150
+LED_PIN=5
+LED_FREQ_HZ=400000
+LED_DMA=10
+LED_BRIGHTNESS=150
+LED_INVERT=True
+```
+
 # NeoPixel_FFT
 
 Neopixel visualizer for audio FFT signal
@@ -19,7 +63,7 @@ sudo apt-get install python3-numpy python3-pyaudio
 
 ## Usage
 
-sudo python ./xmas.py
+sudo python ./main.py
 
 ## Contributing
 
@@ -32,10 +76,6 @@ sudo python ./xmas.py
 ## Demo
 
 [![Demo video](https://img.youtube.com/vi/PyBxUqtKxwA/0.jpg)](https://www.youtube.com/watch?v=PyBxUqtKxwA)
-
-## History
-
-11/27 Uploaded
 
 ## Credits
 

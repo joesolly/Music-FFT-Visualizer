@@ -8,6 +8,7 @@ numpy = "*"
 pyaudio = "*"
 pygame = "*"
 "jinja2" = "*"
+python-decouple = "*"
 
 [dev-packages]
 

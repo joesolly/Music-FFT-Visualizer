@@ -24,7 +24,6 @@ class SwhRecorder:
             self.buffersToRecord = 1
         self.samplesToRecord = int(self.BUFFERSIZE * self.buffersToRecord)
         self.chunksToRecord = int(self.samplesToRecord / self.BUFFERSIZE)
-        self.secPerPoint = 1.0 / self.RATE
 
         self.p = pyaudio.PyAudio()
         self.inStream = self.p.open(
@@ -35,8 +34,6 @@ class SwhRecorder:
             frames_per_buffer=self.BUFFERSIZE,
             input_device_index=0)
 
-        self.xsBuffer = numpy.arange(self.BUFFERSIZE) * self.secPerPoint
-        self.xs = numpy.arange(self.chunksToRecord * self.BUFFERSIZE) * self.secPerPoint
         self.audio = numpy.empty((self.chunksToRecord * self.BUFFERSIZE), dtype=numpy.int16)
 
     def close(self):
