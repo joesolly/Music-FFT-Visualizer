@@ -25,8 +25,8 @@ class Visualization(object):
     VISUALIZATION_METHODS = [choice[0] for choice in VISUALIZATION_METHOD_CHOICES]
     visualization_method = VISUALIZATION_METHODS[-1]
     single_frequency_amplitue_color = (255, 255, 255)
-    max_db = 1020
-    max_db_length = 500  # number of samples to use for weighted average of max db
+    max_db = 20000
+    max_db_length = 50  # number of samples to use for weighted average of max db
     max_db_array = []
     max_db_weights = []
 
@@ -53,7 +53,7 @@ class Visualization(object):
 
         self.start_time = time.time()
 
-        self.SR = SwhRecorder()
+        self.SR = SwhRecorder(buckets=self.led_count)
         self.SR.setup()
         self.SR.continuousStart()
 
@@ -84,21 +84,25 @@ class Visualization(object):
             pygame.quit()
 
     def run_fft(self):
-        xs, ys = self.SR.fft(trimBy=False)
+        ys = self.SR.fft()
+        if ys is None:
+            return False
 
         for led in range(self.led_count):
-            # 15 -> 315 is the frequency range for most music (deep bass should probably remove the +15)
-            led_num = int(led * (300 / self.led_count)) + 15
-            db = int(ys[led_num] / (20 - (led / (self.led_count / 20)) + 1))
+            # 15 -> 900 is the frequency range for most music (deep bass should probably remove the +15)
+            led_num = int(led * (len(ys) / self.led_count))
+            db = ys[led_num]
             if db > self.dbs[led]:  # jump up fast
                 self.dbs[led] = db
             else:  # fade slowly
-                self.dbs[led] = int((self.dbs[led] * 2 + db) / 3)
+                self.dbs[led] = int((self.dbs[led] * 1 + db * 2) / 3)
+            # self.dbs[led] = db
 
         self.max_db_array.pop(0)
         self.max_db_array.append(max(self.dbs))
         # use weighted avg for max then set top 95% as max
         self.max_db = numpy.average(self.max_db_array, weights=self.max_db_weights) * .95
+        return True
 
     def set_visualization_method(self, method):
         self.visualization_method = method
@@ -109,8 +113,8 @@ class Visualization(object):
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         shutdown()
-            self.run_fft()
-            self.display_fft()
+            if self.run_fft():
+                self.display_fft()
             httpd.serve_once(self.set_visualization_method)
 
     def write_pixel(self, index, rgb_color):

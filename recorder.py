@@ -6,13 +6,21 @@ import threading
 class SwhRecorder:
     """Simple, cross-platform class to record from the microphone."""
 
-    def __init__(self):
+    MAX_FREQUENCY = 4000  # sounds above this are just annoying
+    MIN_FREQUENCY = 16  # can't hear anything less than this
+
+    def __init__(self, buckets=300):
         """minimal garb is executed when class is loaded."""
+        self.buckets = buckets
         self.RATE = 48100
-        self.BUFFERSIZE = 4024 * 2  # 1024 is a good buffer size
-        self.secToRecord = .01
+        self.BUFFERSIZE = 1024 * 4  # should be a power of 2 and at least double buckets
+        self.secToRecord = int(self.BUFFERSIZE / self.RATE)
         self.threadsDieNow = False
-        self.newAudio = False
+        self.newData = False
+
+        self.buckets_within_frequency = (self.MAX_FREQUENCY * self.BUFFERSIZE) / self.RATE
+        self.buckets_per_final_bucket = max(int(self.buckets_within_frequency / buckets), 1)
+        self.buckets_below_frequency = int((self.MIN_FREQUENCY * self.BUFFERSIZE) / self.RATE)
 
     def setup(self):
         """initialize sound card."""
@@ -22,8 +30,6 @@ class SwhRecorder:
         self.buffersToRecord = int(self.RATE * self.secToRecord / self.BUFFERSIZE)
         if self.buffersToRecord == 0:
             self.buffersToRecord = 1
-        self.samplesToRecord = int(self.BUFFERSIZE * self.buffersToRecord)
-        self.chunksToRecord = int(self.samplesToRecord / self.BUFFERSIZE)
 
         self.p = pyaudio.PyAudio()
         self.inStream = self.p.open(
@@ -34,7 +40,7 @@ class SwhRecorder:
             frames_per_buffer=self.BUFFERSIZE,
             input_device_index=0)
 
-        self.audio = numpy.empty((self.chunksToRecord * self.BUFFERSIZE), dtype=numpy.int16)
+        self.audio = numpy.empty((self.buffersToRecord * self.BUFFERSIZE), dtype=numpy.int16)
 
     def close(self):
         """cleanly back out and release sound card."""
@@ -53,9 +59,9 @@ class SwhRecorder:
         while True:
             if self.threadsDieNow:
                 break
-            for i in range(self.chunksToRecord):
+            for i in range(self.buffersToRecord):
                 self.audio[i * self.BUFFERSIZE:(i + 1) * self.BUFFERSIZE] = self.getAudio()
-            self.newAudio = True
+            self.newData = True
             if forever is False:
                 break
 
@@ -70,27 +76,20 @@ class SwhRecorder:
         if hasattr(self, 't') and self.t:
             self.t.join()
 
-    def downsample(self, data, mult):
-        """Given 1D data, return the binned average."""
-        overhang = len(data) % mult
-        if overhang:
-            data = data[:-overhang]
-        data = numpy.reshape(data, (len(data) / mult, mult))
-        data = numpy.average(data, 1)
-        return data
-
-    def fft(self, data=None, trimBy=10, logScale=False, divBy=100):
-        if data is None:
-            data = self.audio.flatten()
+    def fft(self):
+        if not self.newData:
+            return None
+        data = self.audio.flatten()
+        self.newData = False
         left, right = numpy.split(numpy.abs(numpy.fft.fft(data)), 2)
-        ys = numpy.add(left, right[::-1])
-        if logScale:
-            ys = numpy.multiply(20, numpy.log10(ys))
-        xs = numpy.arange(self.BUFFERSIZE / 2, dtype=float)
-        if trimBy:
-            i = int((self.BUFFERSIZE / 2) / trimBy)
-            ys = ys[:i]
-            xs = xs[:i] * self.RATE / self.BUFFERSIZE
-        if divBy:
-            ys = ys / float(divBy)
-        return xs, ys
+        ys = numpy.add(left, right[::-1])  # don't lose power, add negative to positive
+
+        ys = ys[self.buckets_below_frequency:]
+
+        # Shorten to requested number of buckets within MAX_FREQUENCY
+        final = ys[::self.buckets_per_final_bucket]
+        for i in range(1, self.buckets_per_final_bucket):
+            data_to_combine = numpy.resize(ys[i::self.buckets_per_final_bucket], len(final))
+            final = numpy.add(final, data_to_combine)
+
+        return final[:int(self.buckets_within_frequency)]
