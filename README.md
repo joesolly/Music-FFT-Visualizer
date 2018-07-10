@@ -1,3 +1,19 @@
+# NeoPixel_FFT
+
+Neopixel visualizer for audio FFT signal.
+
+This can be run from OSX for development purposes using the pygame library to emulate pixels.
+
+You will need a USB microphone or a USB headphone jack to process audio on the Raspberry Pi. The code uses PWM and a DMA to accurately write to the NeoPixels. You should use a high speed level converter to shift from 3.3V to 5V data. The default pin used is GPIO 18.
+
+The algorithm takes the number of LEDs you have, and attempts to create FFT buckets from 16Hz to 5000Hz in even increments for each LED.
+
+There are several different visual algorithms to choose between. There is a server that runs by default on port 8080 that allows you to easily change the display algorithm.
+
+## Resin.io
+
+Visit resin.io for information about what the service provides. Essentially, you can create an account and push a copy of this repository to your resin git project, and you will be up and running.
+
 # Installation
 
 ## OSX
@@ -41,42 +57,3 @@ LED_DMA=10
 LED_BRIGHTNESS=150
 LED_INVERT=True
 ```
-
-# NeoPixel_FFT
-
-Neopixel visualizer for audio FFT signal
-
-Using the example from: http://www.swharden.com/wp/2013-05-09-realtime-fft-audio-visualization-with-python/
-
-Visualized the fft from the microphone on my webcam over 300 neopixels.
-
-Starting with the lower frequencies, going up (in a log-ish mannor) to higher frequencies, low db=blue going to green, then red.
-
-## Installation
-
-Follow raspberrypi neopixel guide here: https://learn.adafruit.com/neopixels-on-raspberry-pi/software
-
-sudo apt-get install python-matplotlib python-numpy python-scipy python-pyaudio
-
-brew install portaudio
-sudo apt-get install python3-numpy python3-pyaudio
-
-## Usage
-
-sudo python ./main.py
-
-## Contributing
-
-1.  Fork it!
-2.  Create your feature branch: `git checkout -b my-new-feature`
-3.  Commit your changes: `git commit -am 'Add some feature'`
-4.  Push to the branch: `git push origin my-new-feature`
-5.  Submit a pull request :D
-
-## Demo
-
-[![Demo video](https://img.youtube.com/vi/PyBxUqtKxwA/0.jpg)](https://www.youtube.com/watch?v=PyBxUqtKxwA)
-
-## Credits
-
-SWHarden.com
