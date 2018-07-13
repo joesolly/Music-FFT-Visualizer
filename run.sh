@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rmmod snd_bcm2835
+
 if [ -f .env ]; then
   source .env
 fi

@@ -38,7 +38,7 @@ class SwhRecorder:
             rate=self.RATE,
             input=True,
             frames_per_buffer=self.BUFFERSIZE,
-            input_device_index=0)
+            input_device_index=self.p.get_default_input_device_info()['index'])
 
         self.audio = numpy.empty((self.buffersToRecord * self.BUFFERSIZE), dtype=numpy.int16)
 
@@ -60,7 +60,11 @@ class SwhRecorder:
             if self.threadsDieNow:
                 break
             for i in range(self.buffersToRecord):
-                self.audio[i * self.BUFFERSIZE:(i + 1) * self.BUFFERSIZE] = self.getAudio()
+                try:
+                    audio = self.getAudio()
+                    self.audio[i * self.BUFFERSIZE:(i + 1) * self.BUFFERSIZE] = audio
+                except:  #OSError input overflowed
+                    print('OSError: input overflowed')
             self.newData = True
             if forever is False:
                 break

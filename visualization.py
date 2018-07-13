@@ -4,7 +4,7 @@ import colorsys
 import numpy
 
 try:
-    from neopixel import PixelStrip
+    from neopixel import PixelStrip, Color
     has_pixels = True
 except Exception:
     has_pixels = False
@@ -32,7 +32,7 @@ class Visualization(object):
 
     def __init__(self, led_count, led_pin, led_freq_hz, led_dma, led_brightness, led_invert):
         self.led_count = led_count
-        self.led_pint = led_pin
+        self.led_pin = led_pin
         self.led_freq_hz = led_freq_hz
         self.led_dma = led_dma
         self.led_brightness = led_brightness
@@ -89,14 +89,12 @@ class Visualization(object):
             return False
 
         for led in range(self.led_count):
-            # 15 -> 900 is the frequency range for most music (deep bass should probably remove the +15)
             led_num = int(led * (len(ys) / self.led_count))
             db = ys[led_num]
             if db > self.dbs[led]:  # jump up fast
                 self.dbs[led] = db
             else:  # fade slowly
                 self.dbs[led] = int((self.dbs[led] * 2 + db * 3) / 5)
-            # self.dbs[led] = db
 
         self.max_db_array.pop(0)
         self.max_db_array.append(max(self.dbs))
@@ -119,7 +117,7 @@ class Visualization(object):
 
     def write_pixel(self, index, rgb_color):
         if has_pixels:
-            self.strip.setPixelColor(index, *rgb_color)
+            self.strip.setPixelColor(index, Color(*rgb_color))
         else:
             self.screen.fill(rgb_color, self.boxes[index])
 
