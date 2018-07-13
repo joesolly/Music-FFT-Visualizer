@@ -12,7 +12,11 @@ class SwhRecorder:
     def __init__(self, buckets=300):
         """minimal garb is executed when class is loaded."""
         self.buckets = buckets
-        self.RATE = 48100
+
+        self.p = pyaudio.PyAudio()
+        self.input_device = self.p.get_default_input_device_info()
+
+        self.RATE = int(self.input_device['defaultSampleRate'])
         self.BUFFERSIZE = 1024 * 4  # should be a power of 2 and at least double buckets
         self.secToRecord = int(self.BUFFERSIZE / self.RATE)
         self.threadsDieNow = False
@@ -22,23 +26,19 @@ class SwhRecorder:
         self.buckets_per_final_bucket = max(int(self.buckets_within_frequency / buckets), 1)
         self.buckets_below_frequency = int((self.MIN_FREQUENCY * self.BUFFERSIZE) / self.RATE)
 
-    def setup(self):
-        """initialize sound card."""
-        # TODO - windows detection vs. alsa or something for linux
-        # TODO - try/except for sound card selection/initiation
-
         self.buffersToRecord = int(self.RATE * self.secToRecord / self.BUFFERSIZE)
         if self.buffersToRecord == 0:
             self.buffersToRecord = 1
 
-        self.p = pyaudio.PyAudio()
+    def setup(self):
+        """initialize sound card."""
         self.inStream = self.p.open(
             format=pyaudio.paInt16,
             channels=1,
             rate=self.RATE,
             input=True,
             frames_per_buffer=self.BUFFERSIZE,
-            input_device_index=self.p.get_default_input_device_info()['index'])
+            input_device_index=self.input_device['index'])
 
         self.audio = numpy.empty((self.buffersToRecord * self.BUFFERSIZE), dtype=numpy.int16)
 
