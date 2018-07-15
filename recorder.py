@@ -16,9 +16,9 @@ class SwhRecorder:
         self.p = pyaudio.PyAudio()
         self.input_device = self.p.get_default_input_device_info()
 
+        self.secToRecord = 0.08
         self.RATE = int(self.input_device['defaultSampleRate'])
-        self.BUFFERSIZE = 1024 * 4  # should be a power of 2 and at least double buckets
-        self.secToRecord = int(self.BUFFERSIZE / self.RATE)
+        self.BUFFERSIZE = int(self.secToRecord * self.RATE)  # should be a power of 2 and at least double buckets
         self.threadsDieNow = False
         self.newData = False
 

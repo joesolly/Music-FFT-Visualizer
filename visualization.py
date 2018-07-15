@@ -52,6 +52,7 @@ class Visualization(object):
             self.dbs.append(0)
 
         self.start_time = time.time()
+        self.iterations = 0
 
         self.SR = SwhRecorder(buckets=self.led_count)
         self.SR.setup()
@@ -113,6 +114,9 @@ class Visualization(object):
                         shutdown()
             if self.run_fft():
                 self.display_fft()
+                self.iterations += 1
+                if self.iterations % 100 == 0:
+                    print('Frame Rate: {}'.format(self.iterations / (time.time() - self.start_time)))
             httpd.serve_once(self.set_visualization_method)
 
     def write_pixel(self, index, rgb_color):
