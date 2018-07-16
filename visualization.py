@@ -18,7 +18,7 @@ class PyGamePixels(object):
         self.screen = screen
         self.boxes = boxes
 
-    def setPixelColor(self, idx, r, g, b):
+    def setPixelColorRGB(self, idx, r, g, b):
         self.screen.fill((r, g, b), self.boxes[idx])
 
     def show(self):
@@ -134,7 +134,7 @@ class Visualization(object):
                     print('Frame Rate: {}'.format(self.iterations / (time.time() - self.start_time)))
 
     def write_pixel(self, index, rgb_color):
-        self.strip.setPixelColor(index, *rgb_color)
+        self.strip.setPixelColorRGB(index, *rgb_color)
 
     # Heavily optimized for s=1 and v=1
     def hsv_to_rgb(self, h):
