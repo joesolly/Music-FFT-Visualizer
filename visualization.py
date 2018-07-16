@@ -1,16 +1,28 @@
 import math
 import time
-import colorsys
 import numpy
 
 try:
-    from neopixel import PixelStrip, Color
+    from neopixel import PixelStrip
     has_pixels = True
 except Exception:
     has_pixels = False
     import pygame
 
 from recorder import SwhRecorder
+
+
+class PyGamePixels(object):
+
+    def __init__(self, screen, boxes):
+        self.screen = screen
+        self.boxes = boxes
+
+    def setPixelColor(self, idx, r, g, b):
+        self.screen.fill((r, g, b), self.boxes[idx])
+
+    def show(self):
+        pygame.display.update()
 
 
 class Visualization(object):
@@ -78,6 +90,8 @@ class Visualization(object):
                 self.screen.fill((color, color, color), box)
                 self.boxes.append(box)
             pygame.display.update()
+            # patch neopixel functions onto pygame so we don't need if statements
+            self.strip = PyGamePixels(self.screen, self.boxes)
 
     def close(self):
         self.SR.close()
@@ -108,26 +122,23 @@ class Visualization(object):
 
     def loop(self, shutdown, httpd):
         while True:
-            if not has_pixels:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        shutdown()
             if self.run_fft():
                 self.display_fft()
                 httpd.serve_once(self.set_visualization_method)
+                if not has_pixels:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            shutdown()
                 self.iterations += 1
                 if self.iterations % 100 == 0:
                     print('Frame Rate: {}'.format(self.iterations / (time.time() - self.start_time)))
 
     def write_pixel(self, index, rgb_color):
-        if has_pixels:
-            self.strip.setPixelColor(index, Color(*rgb_color))
-        else:
-            self.screen.fill(rgb_color, self.boxes[index])
+        self.strip.setPixelColor(index, *rgb_color)
 
     # Heavily optimized for s=1 and v=1
     def hsv_to_rgb(self, h):
-        i = int(h*6.) # XXX assume int() truncates!
+        i = int(h*6.)  # XXX assume int() truncates!
         f = (h*6.)-i; q,t = int(255*(1.-f)), int(255*f); i%=6
         if i == 0: return (255, t, 0)
         if i == 1: return (q, 255, 0)
@@ -174,8 +185,4 @@ class Visualization(object):
 
     def display_fft(self):
         getattr(self, 'display_{}'.format(self.visualization_method))()
-
-        if has_pixels:
-            self.strip.show()
-        else:
-            pygame.display.update()
+        self.strip.show()
