@@ -114,10 +114,10 @@ class Visualization(object):
                         shutdown()
             if self.run_fft():
                 self.display_fft()
+                httpd.serve_once(self.set_visualization_method)
                 self.iterations += 1
                 if self.iterations % 100 == 0:
                     print('Frame Rate: {}'.format(self.iterations / (time.time() - self.start_time)))
-            httpd.serve_once(self.set_visualization_method)
 
     def write_pixel(self, index, rgb_color):
         if has_pixels:
@@ -125,9 +125,16 @@ class Visualization(object):
         else:
             self.screen.fill(rgb_color, self.boxes[index])
 
-    def hsv_to_rgb(self, color_fraction):
-        color_fraction = max(0, min(color_fraction, 1))
-        return [int(color * 255) for color in colorsys.hsv_to_rgb(color_fraction, 1, 1)]
+    # Heavily optimized for s=1 and v=1
+    def hsv_to_rgb(self, h):
+        i = int(h*6.) # XXX assume int() truncates!
+        f = (h*6.)-i; q,t = int(255*(1.-f)), int(255*f); i%=6
+        if i == 0: return (255, t, 0)
+        if i == 1: return (q, 255, 0)
+        if i == 2: return (0, 255, t)
+        if i == 3: return (0, q, 255)
+        if i == 4: return (t, 0, 255)
+        if i == 5: return (255, 0, q)
 
     def display_frequency_color(self):
         for led in range(self.led_count):
@@ -136,33 +143,33 @@ class Visualization(object):
 
     def display_single_frequency_amplitude(self):
         for led in range(self.led_count):
-            rgb_color = [
-                min(int(color * self.dbs[led] / self.max_db), 255) for color in self.single_frequency_amplitue_color]
+            multiplier = min(self.dbs[led] / self.max_db, 1)
+            rgb_color = [int(color * multiplier) for color in self.single_frequency_amplitue_color]
             self.write_pixel(led, rgb_color)
 
     def display_color_change_frequency_amplitude(self):
         time_fraction = ((time.time() - self.start_time) / 8) % 1  # rotate from 0 to 1 in 8 seconds
-        colors = colorsys.hsv_to_rgb(time_fraction, 1, 1)
+        colors = self.hsv_to_rgb(time_fraction, 1, 1)
 
         for led in range(self.led_count):
-            rgb_color = [
-                min(int(color * 255 * self.dbs[led] / self.max_db), 255) for color in colors]
+            multiplier = min(self.dbs[led] / self.max_db, 1)
+            rgb_color = [int(color * multiplier) for color in colors]
             self.write_pixel(led, rgb_color)
 
     def display_frequency_color_frequency_amplitude(self):
         for led in range(self.led_count):
             colors = self.hsv_to_rgb(led / self.led_count)
-            rgb_color = [
-                min(int(color * self.dbs[led] / self.max_db), color) for color in colors]
+            multiplier = min(self.dbs[led] / self.max_db, 1)
+            rgb_color = [int(color * multiplier) for color in colors]
             self.write_pixel(led, rgb_color)
 
     def display_frequency_color_shift_frequency_amplitude(self):
-        time_fraction = ((time.time() - self.start_time) / 8) % 1  # rotate from 0 to 1 in 8 seconds
+        time_fraction = ((self.start_time - time.time()) / 8) % 1  # rotate from 0 to 1 in 8 seconds
 
         for led in range(self.led_count):
-            colors = self.hsv_to_rgb(((led / self.led_count) + (time_fraction * -1)) % 1)
-            rgb_color = [
-                min(int(color * self.dbs[led] / self.max_db), color) for color in colors]
+            colors = self.hsv_to_rgb(((led / self.led_count) + time_fraction) % 1)
+            multiplier = min(self.dbs[led] / self.max_db, 1)
+            rgb_color = [int(color * multiplier) for color in colors]
             self.write_pixel(led, rgb_color)
 
     def display_fft(self):
