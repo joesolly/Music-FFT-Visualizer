@@ -9,9 +9,11 @@ class SwhRecorder:
     MAX_FREQUENCY = 5000  # sounds above this are just annoying
     MIN_FREQUENCY = 16  # can't hear anything less than this
 
-    def __init__(self, buckets=300):
+    def __init__(self, buckets=300, min_freq=16, max_freq=5000):
         """minimal garb is executed when class is loaded."""
         self.buckets = buckets
+        self.MIN_FREQUENCY = min_freq
+        self.MAX_FREQUENCY = max_freq
 
         self.p = pyaudio.PyAudio()
         self.input_device = self.p.get_default_input_device_info()

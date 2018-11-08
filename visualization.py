@@ -42,13 +42,17 @@ class Visualization(object):
     max_db_array = []
     max_db_weights = []
 
-    def __init__(self, led_count, led_pin, led_freq_hz, led_dma, led_brightness, led_invert):
+    def __init__(self, led_count, led_pin, led_freq_hz, led_dma, led_brightness, led_invert, min_multiplier, min_freq,
+                 max_freq, min_amplitude):
         self.led_count = led_count
+        self.bucket_count = int(led_count / 2)
         self.led_pin = led_pin
         self.led_freq_hz = led_freq_hz
         self.led_dma = led_dma
         self.led_brightness = led_brightness
         self.led_invert = led_invert
+        self.min_multiplier = min_multiplier
+        self.min_amplitude = min_amplitude
 
         for i in range(self.max_db_length):
             self.max_db_array.append(self.max_db)
@@ -60,13 +64,13 @@ class Visualization(object):
                 self.max_db_weights.append(1)
 
         self.dbs = []
-        for _ in range(self.led_count):
+        for _ in range(self.bucket_count):
             self.dbs.append(0)
 
         self.start_time = time.time()
         self.iterations = 0
 
-        self.SR = SwhRecorder(buckets=self.led_count)
+        self.SR = SwhRecorder(buckets=self.bucket_count, min_freq=min_freq, max_freq=max_freq)
         self.SR.setup()
         self.SR.continuousStart()
 
@@ -78,14 +82,14 @@ class Visualization(object):
             self.strip.begin()
         else:
             pygame.init()
-            size = 20
-            width = int(math.sqrt(self.led_count))
-            self.screen = pygame.display.set_mode((size * width, size * (width + 1)))
+            width = 4
+            height = 20
+            self.screen = pygame.display.set_mode((width * self.led_count, height))
             self.boxes = []
             for led in range(self.led_count):
-                y = int(led / width) * size
-                x = led % width * size
-                box = pygame.Rect(x, y, size, size)
+                y = 0
+                x = led * width
+                box = pygame.Rect(x, y, width, height)
                 color = int((led * 255.) / self.led_count)
                 self.screen.fill((color, color, color), box)
                 self.boxes.append(box)
@@ -103,8 +107,8 @@ class Visualization(object):
         if ys is None:
             return False
 
-        for led in range(self.led_count):
-            led_num = int(led * (len(ys) / self.led_count))
+        for led in range(self.bucket_count):
+            led_num = int(led * (len(ys) / self.bucket_count))
             db = ys[led_num]
             if db > self.dbs[led]:  # jump up fast
                 self.dbs[led] = db
@@ -115,6 +119,7 @@ class Visualization(object):
         self.max_db_array.append(max(self.dbs))
         # use weighted avg for max then set top 95% as max
         self.max_db = numpy.average(self.max_db_array, weights=self.max_db_weights) * .95
+        self.max_db = max(self.max_db, self.min_amplitude)
         return True
 
     def set_visualization_method(self, method):
@@ -134,7 +139,8 @@ class Visualization(object):
                     print('Frame Rate: {}'.format(self.iterations / (time.time() - self.start_time)))
 
     def write_pixel(self, index, rgb_color):
-        self.strip.setPixelColorRGB(index, *rgb_color)
+        self.strip.setPixelColorRGB(self.bucket_count + index, *rgb_color)
+        self.strip.setPixelColorRGB(self.bucket_count - index - 1, *rgb_color)
 
     # Heavily optimized for s=1 and v=1
     def hsv_to_rgb(self, h):
@@ -148,13 +154,14 @@ class Visualization(object):
         if i == 5: return (255, 0, q)
 
     def display_frequency_color(self):
-        for led in range(self.led_count):
+        for led in range(self.bucket_count):
             # blue is low and red is high
             self.write_pixel(led, self.hsv_to_rgb((.7 - (self.dbs[led] / self.max_db)) % 1))
 
     def display_single_frequency_amplitude(self):
-        for led in range(self.led_count):
+        for led in range(self.bucket_count):
             multiplier = min(self.dbs[led] / self.max_db, 1)
+            multiplier = multiplier if multiplier > self.min_multiplier else 0
             rgb_color = [int(color * multiplier) for color in self.single_frequency_amplitue_color]
             self.write_pixel(led, rgb_color)
 
@@ -162,24 +169,27 @@ class Visualization(object):
         time_fraction = ((time.time() - self.start_time) / 8) % 1  # rotate from 0 to 1 in 8 seconds
         colors = self.hsv_to_rgb(time_fraction, 1, 1)
 
-        for led in range(self.led_count):
+        for led in range(self.bucket_count):
             multiplier = min(self.dbs[led] / self.max_db, 1)
+            multiplier = multiplier if multiplier > self.min_multiplier else 0
             rgb_color = [int(color * multiplier) for color in colors]
             self.write_pixel(led, rgb_color)
 
     def display_frequency_color_frequency_amplitude(self):
-        for led in range(self.led_count):
-            colors = self.hsv_to_rgb(led / self.led_count)
+        for led in range(self.bucket_count):
+            colors = self.hsv_to_rgb(led / self.bucket_count)
             multiplier = min(self.dbs[led] / self.max_db, 1)
+            multiplier = multiplier if multiplier > self.min_multiplier else 0
             rgb_color = [int(color * multiplier) for color in colors]
             self.write_pixel(led, rgb_color)
 
     def display_frequency_color_shift_frequency_amplitude(self):
         time_fraction = ((self.start_time - time.time()) / 8) % 1  # rotate from 0 to 1 in 8 seconds
 
-        for led in range(self.led_count):
-            colors = self.hsv_to_rgb(((led / self.led_count) + time_fraction) % 1)
+        for led in range(self.bucket_count):
+            colors = self.hsv_to_rgb(((led / self.bucket_count) + time_fraction) % 1)
             multiplier = min(self.dbs[led] / self.max_db, 1)
+            multiplier = multiplier if multiplier > self.min_multiplier else 0
             rgb_color = [int(color * multiplier) for color in colors]
             self.write_pixel(led, rgb_color)
 

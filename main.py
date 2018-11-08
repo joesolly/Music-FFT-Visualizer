@@ -20,6 +20,13 @@ LED_BRIGHTNESS = config('LED_BRIGHTNESS', default=255, cast=int)  # Set to 0 for
 # True to invert the signal (when using NPN transistor level shift)
 LED_INVERT = config('LED_INVERT', default=False, cast=bool)
 
+MIN_FREQ = config('MIN_FREQ', default=16, cast=int)
+MAX_FREQ = config('MAX_FREQ', default=5000, cast=int)
+
+MIN_MULTIPLIER = config('MIN_MULTIPLIER', default=.5, cast=float)
+
+MIN_AMPLITUDE = config('MIN_AMPLITUDE', default=0, cast=int)
+
 
 def shutdown():
     print('shutdown starting')
@@ -33,6 +40,8 @@ def signal_handler(signal, frame):
 
 
 signal.signal(signal.SIGINT, signal_handler)
-visualization = Visualization(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_BRIGHTNESS, LED_INVERT)
+visualization = Visualization(
+    LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_BRIGHTNESS, LED_INVERT, MIN_MULTIPLIER, MIN_FREQ, MAX_FREQ,
+    MIN_AMPLITUDE)
 httpd = CustomHTTPServer(("", PORT), Server)
 visualization.loop(shutdown, httpd)
