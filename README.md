@@ -1,6 +1,6 @@
-# NeoPixel_FFT
+# Music FFT Visualizer
 
-Neopixel visualizer for audio FFT signal.
+Neopixel music visualizer for audio FFT signal.
 
 This can be run from OSX for development purposes using the pygame library to emulate pixels.
 
@@ -10,9 +10,9 @@ The algorithm takes the number of LEDs you have, and attempts to create FFT buck
 
 There are several different visual algorithms to choose between. There is a server that runs by default on port 8080 that allows you to easily change the display algorithm.
 
-## Resin.io
+## balena.io
 
-Visit resin.io for information about what the service provides. Essentially, you can create an account and push a copy of this repository to your resin git project, and you will be up and running.
+Visit balena.io for information about what the service provides. Essentially, you can create an account and push a copy of this repository to your balena git project, and you will be up and running.
 
 # Installation
 
